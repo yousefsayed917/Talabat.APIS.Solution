@@ -1,4 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Talabat.Core.Eintites;
+using Talabat.Core.Repositories;
+using Talabat.Repository;
 using Talabat.Repository.Data;
 
 namespace Talabat.APIS
@@ -19,6 +22,8 @@ namespace Talabat.APIS
             {
                 option.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
             });
+            //builder.Services.AddScoped<IGenaricRepository<Product>,GenaricRepository<Product>>();
+            builder.Services.AddScoped(typeof(IGenaricRepository<>),typeof(GenaricRepository<>));//more dinamic ⁄‘«‰ „⁄œ‘ «ﬂ—— ·· »—Êœ«ﬂ  »—«œ Ê «·»—Êœ«ﬂ   «Ì» 
             #endregion
             #region Build Project
             var app = builder.Build(); //Build the project
@@ -36,6 +41,7 @@ namespace Talabat.APIS
             {
                 var Dbcontext = Services.GetRequiredService<TalabatDbContext>();
                 await Dbcontext.Database.MigrateAsync();
+                await TalabatDbContextSeed.SeedAsync(Dbcontext); 
             }
             catch (Exception ex)
             {
