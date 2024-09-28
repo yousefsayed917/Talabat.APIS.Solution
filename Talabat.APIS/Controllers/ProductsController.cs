@@ -1,5 +1,9 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Talabat.APIS.DTOS;
+using Talabat.APIS.Errors;
 using Talabat.Core.Eintites;
 using Talabat.Core.Repositories;
 using Talabat.Core.Specification;
@@ -9,10 +13,12 @@ namespace Talabat.APIS.Controllers
     public class ProductsController : APIBaseController
     {
         private readonly IGenaricRepository<Product> _productRepo;
+        private readonly IMapper _mapper;
 
-        public ProductsController(IGenaricRepository<Product> ProductRepo)
+        public ProductsController(IGenaricRepository<Product> ProductRepo,IMapper  mapper)
         {
             _productRepo = ProductRepo;
+            _mapper = mapper;
         }
         #region GetAllProducts
         [HttpGet]
@@ -20,8 +26,9 @@ namespace Talabat.APIS.Controllers
         {
             var Spec = new ProductWithBrandAndTypeSpecification();
             var product = await _productRepo.GetAllWithSpecAsync(Spec);
+            var MappedProducts= _mapper.Map<IEnumerable<Product>,IEnumerable<ProductToReturnDto>>(product);
             //var product= await _productRepo.GetAllAsync();
-            return Ok(product);
+            return Ok(MappedProducts);
         }
         #endregion
         #region GetProductById
@@ -30,7 +37,10 @@ namespace Talabat.APIS.Controllers
         {
            var Spec = new ProductWithBrandAndTypeSpecification(id);
             var product = await _productRepo.GetByIdWithSpecAsync(Spec);
-            return Ok(product);
+            if (product is null)
+                return NotFound(new ApiResponse(404));
+            var MappedProducts = _mapper.Map<Product,ProductToReturnDto>(product);
+            return Ok(MappedProducts);
         }
         #endregion
     }

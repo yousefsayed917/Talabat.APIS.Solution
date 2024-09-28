@@ -14,7 +14,6 @@ namespace Talabat.Repository
     public class GenaricRepository<T> : IGenaricRepository<T> where T : BaseEntity
     {
         private readonly TalabatDbContext _dbContext;
-
         public GenaricRepository(TalabatDbContext dbContext)
         {
             _dbContext = dbContext;

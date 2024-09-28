@@ -1,4 +1,8 @@
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Talabat.APIS.Errors;
+using Talabat.APIS.Helper;
+using Talabat.APIS.MiddleWares;
 using Talabat.Core.Eintites;
 using Talabat.Core.Repositories;
 using Talabat.Repository;
@@ -23,7 +27,21 @@ namespace Talabat.APIS
                 option.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
             });
             //builder.Services.AddScoped<IGenaricRepository<Product>,GenaricRepository<Product>>();
-            builder.Services.AddScoped(typeof(IGenaricRepository<>),typeof(GenaricRepository<>));//more dinamic ⁄‘«‰ „⁄œ‘ «ﬂ—— ·· »—Êœ«ﬂ  »—«œ Ê «·»—Êœ«ﬂ   «Ì» 
+            builder.Services.AddScoped(typeof(IGenaricRepository<>), typeof(GenaricRepository<>));//more dinamic ⁄‘«‰ „⁄œ‘ «ﬂ—— ·· »—Êœ«ﬂ  »—«œ Ê «·»—Êœ«ﬂ   «Ì» 
+            builder.Services.AddAutoMapper(typeof(MappingProfiles));
+            builder.Services.Configure<ApiBehaviorOptions>(options =>
+            {
+                options.InvalidModelStateResponseFactory = (actionContext) =>
+                {
+                    var error = actionContext.ModelState.Where(p => p.Value.Errors.Count > 0).
+                    SelectMany(p => p.Value.Errors).Select(p => p.ErrorMessage).ToArray();
+                    var ValidationErrorResponse = new ApiValidationErrorResponse()
+                    {
+                        Errors = error
+                    };
+                    return new BadRequestObjectResult(ValidationErrorResponse);
+                };
+            });
             #endregion
             #region Build Project
             var app = builder.Build(); //Build the project
@@ -41,7 +59,7 @@ namespace Talabat.APIS
             {
                 var Dbcontext = Services.GetRequiredService<TalabatDbContext>();
                 await Dbcontext.Database.MigrateAsync();
-                await TalabatDbContextSeed.SeedAsync(Dbcontext); 
+                await TalabatDbContextSeed.SeedAsync(Dbcontext);
             }
             catch (Exception ex)
             {
@@ -53,10 +71,12 @@ namespace Talabat.APIS
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
+                app.UseMiddleware<ExceptionMiddleWare>();
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
+            app.UseStatusCodePagesWithRedirects("/errors/{0}");
+            app.UseStaticFiles();
             app.UseHttpsRedirection();
 
             app.UseAuthorization();
