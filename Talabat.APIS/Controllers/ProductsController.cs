@@ -22,11 +22,11 @@ namespace Talabat.APIS.Controllers
         }
         #region GetAllProducts
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
+        public async Task<ActionResult<IReadOnlyList<ProductToReturnDto>>> GetProducts([FromQuery] ProductSpecParams Params)
         {
-            var Spec = new ProductWithBrandAndTypeSpecification();
+            var Spec = new ProductWithBrandAndTypeSpecification(Params);
             var product = await _productRepo.GetAllWithSpecAsync(Spec);
-            var MappedProducts= _mapper.Map<IEnumerable<Product>,IEnumerable<ProductToReturnDto>>(product);
+            var MappedProducts= _mapper.Map<IReadOnlyList<Product>,IReadOnlyList<ProductToReturnDto>>(product);
             //var product= await _productRepo.GetAllAsync();
             return Ok(MappedProducts);
         }

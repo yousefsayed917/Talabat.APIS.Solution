@@ -35,7 +35,7 @@ namespace Talabat.APIS.MiddleWares
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                 };
                 var JsonResponse=JsonSerializer.Serialize(response, options);
-                context.Response.WriteAsync(JsonResponse);
+                await context.Response.WriteAsync(JsonResponse);
             }
         }
     }

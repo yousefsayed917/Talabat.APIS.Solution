@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
 using Talabat.APIS.Errors;
+using Talabat.APIS.Extensions;
 using Talabat.APIS.Helper;
 using Talabat.APIS.MiddleWares;
 using Talabat.Core.Eintites;
@@ -26,21 +28,11 @@ namespace Talabat.APIS
             {
                 option.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
             });
-            //builder.Services.AddScoped<IGenaricRepository<Product>,GenaricRepository<Product>>();
-            builder.Services.AddScoped(typeof(IGenaricRepository<>), typeof(GenaricRepository<>));//more dinamic ⁄‘«‰ „⁄œ‘ «ﬂ—— ·· »—Êœ«ﬂ  »—«œ Ê «·»—Êœ«ﬂ   «Ì» 
-            builder.Services.AddAutoMapper(typeof(MappingProfiles));
-            builder.Services.Configure<ApiBehaviorOptions>(options =>
+            builder.Services.AddAppServices();
+            builder.Services.AddSingleton<IConnectionMultiplexer>(Options =>
             {
-                options.InvalidModelStateResponseFactory = (actionContext) =>
-                {
-                    var error = actionContext.ModelState.Where(p => p.Value.Errors.Count > 0).
-                    SelectMany(p => p.Value.Errors).Select(p => p.ErrorMessage).ToArray();
-                    var ValidationErrorResponse = new ApiValidationErrorResponse()
-                    {
-                        Errors = error
-                    };
-                    return new BadRequestObjectResult(ValidationErrorResponse);
-                };
+                var Connection = builder.Configuration.GetConnectionString("RedisConnection");
+                return ConnectionMultiplexer.Connect(Connection);
             });
             #endregion
             #region Build Project
@@ -67,13 +59,12 @@ namespace Talabat.APIS
                 Logger.LogError(ex, "An Error Occured During Aplling the Migration");
             }
             #endregion
-            #region kestral Pipline Medelware
+            #region kestral Pipline MiddleWare
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.UseMiddleware<ExceptionMiddleWare>();
-                app.UseSwagger();
-                app.UseSwaggerUI();
+                app.UseSwaggerMiddleWares(); 
             }
             app.UseStatusCodePagesWithRedirects("/errors/{0}");
             app.UseStaticFiles();
